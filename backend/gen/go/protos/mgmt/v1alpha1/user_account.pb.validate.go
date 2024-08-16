@@ -4689,13 +4689,7 @@ func (m *AccountOnboardingConfig) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for HasCreatedSourceConnection
-
-	// no validation rules for HasCreatedDestinationConnection
-
-	// no validation rules for HasCreatedJob
-
-	// no validation rules for HasInvitedMembers
+	// no validation rules for HasCompletedOnboarding
 
 	if len(errors) > 0 {
 		return AccountOnboardingConfigMultiError(errors)
