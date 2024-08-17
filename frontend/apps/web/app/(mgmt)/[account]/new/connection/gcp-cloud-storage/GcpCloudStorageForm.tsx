@@ -3,7 +3,6 @@ import ButtonText from '@/components/ButtonText';
 import FormError from '@/components/FormError';
 import Spinner from '@/components/Spinner';
 import RequiredLabel from '@/components/labels/RequiredLabel';
-import { buildAccountOnboardingConfig } from '@/components/onboarding-checklist/OnboardingChecklist';
 import { useAccount } from '@/components/providers/account-provider';
 import SkeletonForm from '@/components/skeleton/SkeletonForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -24,22 +23,13 @@ import {
   CreateConnectionFormContext,
   GcpCloudStorageFormValues,
 } from '@/yup-validations/connections';
-import {
-  createConnectQueryKey,
-  useMutation,
-  useQuery,
-} from '@connectrpc/connect-query';
+import { createConnectQueryKey, useMutation } from '@connectrpc/connect-query';
 import { yupResolver } from '@hookform/resolvers/yup';
-import {
-  GetAccountOnboardingConfigResponse,
-  GetConnectionResponse,
-} from '@neosync/sdk';
+import { GetConnectionResponse } from '@neosync/sdk';
 import {
   createConnection,
-  getAccountOnboardingConfig,
   getConnection,
   isConnectionNameAvailable,
-  setAccountOnboardingConfig,
 } from '@neosync/sdk/connectquery';
 import { useQueryClient } from '@tanstack/react-query';
 import Error from 'next/error';
@@ -83,15 +73,7 @@ export default function GcpCloudStorageForm(): ReactElement {
     useMutation(createConnection);
   const { mutateAsync: getGcpCloudStorageConnection } =
     useMutation(getConnection);
-  const { data: onboardingData } = useQuery(
-    getAccountOnboardingConfig,
-    { accountId: account?.id ?? '' },
-    { enabled: !!account?.id }
-  );
   const queryclient = useQueryClient();
-  const { mutateAsync: setOnboardingConfigAsync } = useMutation(
-    setAccountOnboardingConfig
-  );
 
   async function onSubmit(values: GcpCloudStorageFormValues) {
     if (!account || isSubmitting) {
@@ -106,35 +88,6 @@ export default function GcpCloudStorageForm(): ReactElement {
       });
       posthog.capture('New Connection Created', { type: 'gcp-cloud-storage' });
       toast.success('Successfully created connection!');
-
-      // updates the onboarding data
-      try {
-        const resp = await setOnboardingConfigAsync({
-          accountId: account.id,
-          config: buildAccountOnboardingConfig({
-            hasCreatedSourceConnection:
-              onboardingData?.config?.hasCreatedSourceConnection ?? false, // gcp cloud storage is only a destination
-            hasCreatedDestinationConnection:
-              onboardingData?.config?.hasCreatedDestinationConnection ?? true,
-            hasCreatedJob: onboardingData?.config?.hasCreatedJob ?? false,
-            hasInvitedMembers:
-              onboardingData?.config?.hasInvitedMembers ?? false,
-          }),
-        });
-        queryclient.setQueryData(
-          createConnectQueryKey(getAccountOnboardingConfig, {
-            accountId: account.id,
-          }),
-          new GetAccountOnboardingConfigResponse({
-            config: resp.config,
-          })
-        );
-      } catch (e) {
-        toast.error('Unable to update onboarding status!', {
-          description: getErrorMessage(e),
-        });
-      }
-
       const returnTo = searchParams.get('returnTo');
       if (returnTo) {
         router.push(returnTo);
